@@ -1,0 +1,291 @@
+---
+title: "Business Intelligence Lab Submission Markdown"
+author: "<team kubwa>"
+date: "<23/10/2023>"
+output:
+  github_document: 
+    toc: yes
+    toc_depth: 4
+    fig_width: 6
+    fig_height: 4
+    df_print: default
+editor_options:
+  chunk_output_type: console
+---
+
+# Student Details
+
++---------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| **Student ID Numbers and Names of Group Members** | *\<list one Student name, class group (just the letter; A, B, or C), and ID per line, e.g., 123456 - A - John Leposo; you should be between 2 and 5 members per group\>* |
+|                                                   |                                                                                                                                                                          |
+|                                                   | 1.  128998 - B - Crispus Nzano                                                                                                                                            |
+|                                                   |                                                                                                                                                                          |
+|                                                   | 2.  134100 - B - Timothy Obosi                                                                                                                                             |
+|                                                   |                                                                                                                                                                          |
+|                                                   | 3.  134092 - B - Alison Kuria                                                                                                                                                                                                                                                 |
+|                                                   |                                                                                                                                                                          |
+|                                                   | 4.  135269 - B - Clifford Kipchumba                                                                                                                          |
+|                                                   |                                                                                                                                                      |
+|                                                   | 5.  112826 - B - Matu Ngatia                                                                                                                          |
+|                                                   |                                                  
++---------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| **GitHub Classroom Group Name**                   | Team Kubwa                                                                                                       |
++---------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| **Course Code**                                   | BBT4206                                                                                                                                                                  |
++---------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| **Course Name**                                   | Business Intelligence II                                                                                                                                                 |
++---------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| **Program**                                       | Bachelor of Business Information Technology                                                                                                                              |
++---------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| **Semester Duration**                             | 21^st^ August 2023 to 28^th^ November 2023                                                                                                                               |
++---------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+# Setup Chunk
+
+We start by installing all the required packages
+
+```{r Install Packages, echo=TRUE, message=FALSE, warning=FALSE}
+## formatR - Required to format R code in the markdown ----
+
+if (require("languageserver")) {
+  require("languageserver")
+} else {
+  install.packages("languageserver", dependencies = TRUE,
+                   repos = "https://cloud.r-project.org")
+}
+
+# Introduction ----
+# Resampling methods are techniques that can be used to improve the performance
+# and reliability of machine learning algorithms. They work by creating
+# multiple training sets from the original training set. The model is then
+# trained on each training set, and the results are averaged. This helps to
+# reduce overfitting and improve the model's generalization performance.
+
+# Resampling methods include:
+## Splitting the dataset into train and test sets ----
+## Bootstrapping (sampling with replacement) ----
+## Basic k-fold cross validation ----
+## Repeated cross validation ----
+## Leave One Out Cross-Validation (LOOCV) ----
+
+# STEP 1. Install and Load the Required Packages ----
+## mlbench ----
+if (require("mlbench")) {
+  require("mlbench")
+} else {
+  install.packages("mlbench", dependencies = TRUE,
+                   repos = "https://cloud.r-project.org")
+}
+
+## caret ----
+if (require("caret")) {
+  require("caret")
+} else {
+  install.packages("caret", dependencies = TRUE,
+                   repos = "https://cloud.r-project.org")
+}
+
+## kernlab ----
+if (require("kernlab")) {
+  require("kernlab")
+} else {
+  install.packages("kernlab", dependencies = TRUE,
+                   repos = "https://cloud.r-project.org")
+}
+
+## randomForest ----
+if (require("randomForest")) {
+  require("randomForest")
+} else {
+  install.packages("randomForest", dependencies = TRUE,
+                   repos = "https://cloud.r-project.org")
+}
+
+
+
+```
+
+------------------------------------------------------------------------
+
+**Note:** the following "*KnitR*" options have been set as the defaults in this markdown:\
+`knitr::opts_chunk$set(echo = TRUE, warning = FALSE, eval = TRUE, collapse = FALSE, tidy.opts = list(width.cutoff = 80), tidy = TRUE)`.
+
+More KnitR options are documented here <https://bookdown.org/yihui/rmarkdown-cookbook/chunk-options.html> and here <https://yihui.org/knitr/options/>.
+
+```{r setup, echo=TRUE, message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(
+	eval = TRUE,
+	echo = TRUE,
+	warning = FALSE,
+	collapse = FALSE,
+	tidy = TRUE
+)
+```
+
+------------------------------------------------------------------------
+
+**Note:** the following "*R Markdown*" options have been set as the defaults in this markdown:
+
+> output:\
+> \
+> github_document:\
+> toc: yes\
+> toc_depth: 4\
+> fig_width: 6\
+> fig_height: 4\
+> df_print: default\
+> \
+> editor_options:\
+> chunk_output_type: console
+
+# Loading the Loan Status Train Imputed Dataset
+
+The Datasets are then loaded. 
+
+```{r Load Datasets}
+
+library(readr)
+train_imputed <- read_csv("C:/Users/Cris/github-classroom/BBT4206-R-Lab7of15-AlgorithmSelection-team-kubwa/data/train_imputed.csv")
+View(train_imputed)
+
+
+```
+
+## Description of the Dataset
+
+We then display the number of observations and number of variables. 12 Variables and 614 observations.
+
+```{r Your Fourth Code Chunk}
+dim(train_imputed)
+```
+
+Next, we display the quartiles for each numeric variable[*... this is the process of **"storytelling using the data."** The goal is to analyse the Loan and Cubic dataset and try to train a model to make predictions( which model is most suited for this dataset).*]{#highlight style="color: blue"}
+
+```{r Your Fifth Code Chunk}
+summary(train_imputed)
+```
+
+# \<The Resamples Function\>
+
+The "resamples()"  function checks that the models are comparable and that they used the same training scheme ("train_control" configuration). To do this, after the models are trained, they are added to a list and we pass this list of models as an argument to the resamples() function in R
+
+```{r Your Sixth Code Chunk}
+
+## 3.a. Train the Models ----
+# We train the following models, all of which are using 10-fold repeated cross
+# validation with 3 repeats:
+#   LDA
+#   CART
+#   KNN
+#   SVM
+#   Random Fores
+
+train_control <- trainControl(method = "repeatedcv", number = 10, repeats = 3)
+
+### LDA ----
+set.seed(7)
+train_imputed_model_lda <- train(Status ~ ., data = train_imputed,
+                            method = "lda", trControl = train_control)
+
+### CART ----
+set.seed(7)
+train_imputed_model_cart <- train(Status ~ ., data = train_imputed,
+                             method = "rpart", trControl = train_control)
+
+### KNN ----
+set.seed(7)
+train_imputed_model_knn <- train(Status ~ ., data = train_imputed,
+                            method = "knn", trControl = train_control)
+
+### SVM ----
+set.seed(7)
+train_imputed_model_svm <- train(Status ~ ., data = train_imputed,
+                            method = "svmRadial", trControl = train_control)
+
+### Random Forest ----
+set.seed(7)
+train_imputed_model_rf <- train(Status ~ ., data = train_imputed,
+                           method = "rf", trControl = train_control)
+```
+
+## \<Call the `resamples` Function\>
+We then create a list of the model results and pass the list as an argument to the `resamples` function.
+
+```{r Your Seventh Code Chunk}
+results <- resamples(list(LDA = train_imputed_model_lda, CART = train_imputed_model_cart,
+                          KNN = train_imputed_model_knn, SVM = train_imputed_model_svm,
+                          RF = train_imputed_model_rf))
+
+
+```
+
+## \<Display the Results\>
+This is the simplest comparison. It creates a table with one model per row and its corresponding evaluation metrics displayed per column.
+
+```{r Your Eighth Code Chunk}
+summary(results)
+
+## 2. Box and Whisker Plot ----
+# This is useful for visually observing the spread of the estimated accuracies
+# for different algorithms and how they relate.
+
+scales <- list(x = list(relation = "free"), y = list(relation = "free"))
+bwplot(results, scales = scales)
+
+## 3. Dot Plots ----
+# They show both the mean estimated accuracy as well as the 95% confidence
+# interval (e.g. the range in which 95% of observed scores fell).
+
+scales <- list(x = list(relation = "free"), y = list(relation = "free"))
+dotplot(results, scales = scales)
+
+## 4. Scatter Plot Matrix ----
+# This is useful when considering whether the predictions from two
+# different algorithms are correlated. If weakly correlated, then they are good
+# candidates for being combined in an ensemble prediction.
+
+splom(results)
+
+## 5. Pairwise xyPlots ----
+# You can zoom in on one pairwise comparison of the accuracy of trial-folds for
+# two models using an xyplot.
+
+# xyplot plots to compare models
+xyplot(results, models = c("LDA", "SVM"))
+
+# or
+# xyplot plots to compare models
+xyplot(results, models = c("SVM", "CART"))
+
+## 6. Statistical Significance Tests ----
+# This is used to calculate the significance of the differences between the
+# metric distributions of the various models.
+
+### Upper Diagonal ----
+# The upper diagonal of the table shows the estimated difference between the
+# distributions. If we think that LDA is the most accurate model from looking
+# at the previous graphs, we can get an estimate of how much better it is than
+# specific other models in terms of absolute accuracy.
+
+### Lower Diagonal ----
+# The lower diagonal contains p-values of the null hypothesis.
+# The null hypothesis is a claim that "the distributions are the same".
+# A lower p-value is better (more significant).
+
+diffs <- diff(results)
+
+summary(diffs)
+
+
+```
+
+
+**etc.** as per the lab submission requirements. Be neat and communicate in a clear and logical manner.
+
+
+
+
+
+
+
+
